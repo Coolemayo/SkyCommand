@@ -1,0 +1,89 @@
+<script>
+/* === SkyCommand API Integration === */
+const API_KEY = "pfc_6996f46fd6119d2c6086c85bb6fab77c"; // ⚠ Keep private
+
+// Generic fetch helper
+async function callAPI(endpoint, method = "GET", body = null) {
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_KEY}`
+    }
+  };
+  if (body) options.body = JSON.stringify(body);
+
+  try {
+    const res = await fetch(`https://your-api-domain.com/${endpoint}`, options);
+    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error(err);
+    return null;
+  }
+}
+
+/* === Dashboard === */
+async function loadDashboard() {
+  const data = await callAPI("flights/stats"); // Example endpoint
+  if (!data) return;
+
+  document.getElementById("flight-hours").innerText = data.totalHours + " hrs";
+  document.getElementById("total-flights").innerText = data.totalFlights;
+
+  document.getElementById("recent-flights").innerHTML = data.recentFlights.map(f => `
+    <tr>
+      <td>${f.date}</td>
+      <td>${f.from}</td>
+      <td>${f.to}</td>
+      <td>${f.duration}</td>
+    </tr>
+  `).join('');
+}
+
+/* === Flight Logging === */
+document.getElementById("log-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const flightData = Object.fromEntries(formData.entries());
+
+  document.getElementById("log-status").innerText = "Submitting flight log...";
+
+  const result = await callAPI("flights", "POST", flightData);
+  if (result) {
+    document.getElementById("log-status").innerText = "Flight logged successfully!";
+    loadDashboard(); // Refresh dashboard
+  } else {
+    document.getElementById("log-status").innerText = "Error submitting flight.";
+  }
+});
+
+/* === METAR Form === */
+document.getElementById("metar-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const icao = document.getElementById("icao").value;
+  document.getElementById("metar-output").innerText = "Fetching METAR...";
+  const data = await callAPI(`metar/${icao}`);
+  document.getElementById("metar-output").innerText = data ? JSON.stringify(data, null, 2) : "Error fetching METAR";
+});
+
+/* === Charts Form === */
+document.getElementById("charts-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const icao = document.getElementById("charts-icao").value;
+  const data = await callAPI(`charts/${icao}`);
+  document.getElementById("charts-display").innerHTML = data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : "Error fetching charts";
+});
+
+/* === Fade-in Animation === */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+
+/* === Initial Load === */
+loadDashboard();
+</script>
