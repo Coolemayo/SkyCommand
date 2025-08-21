@@ -1,89 +1,150 @@
-<script>
-/* === SkyCommand API Integration === */
-const API_KEY = "pfc_6996f46fd6119d2c6086c85bb6fab77c"; // ⚠ Keep private
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkyCommand</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    body { background: #f8fafc; }
+    header, section { margin-bottom: 4rem; }
+    table { width: 100%; }
+    .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .card { padding: 1.5rem; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+    tr:hover { background-color: #eef6ff; transition: background 0.3s ease; }
+    [data-animate] { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    [data-animate].visible { opacity: 1; transform: translateY(0); }
+    button, a[role="button"] { transition: background 0.3s ease, transform 0.2s ease; }
+    button:hover, a[role="button"]:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="container-fluid">
+    <ul><li><strong>SkyCommand</strong></li></ul>
+    <ul>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#logging" role="button">Log Flight</a></li>
+    </ul>
+  </nav>
 
-// Generic fetch helper
-async function callAPI(endpoint, method = "GET", body = null) {
-  const options = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${API_KEY}`
+  <!-- Main -->
+  <main class="container">
+
+    <!-- Homepage -->
+    <header data-animate>
+      <h1>Welcome to SkyCommand</h1>
+      <p>Your all-in-one flight logging dashboard.<br>
+      <strong>Auto-login with Discord required</strong> (OAuth2 placeholder).</p>
+      <button>Login with Discord</button>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="dashboard" data-animate>
+      <h2>Dashboard</h2>
+      <div class="dashboard-cards">
+        <div class="card">
+          <h3>Total Flight Hours</h3>
+          <p id="flight-hours">Loading...</p>
+        </div>
+        <div class="card">
+          <h3>Total Flights</h3>
+          <p id="total-flights">Loading...</p>
+        </div>
+      </div>
+      <h3>Recent Flights</h3>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>From</th><th>To</th><th>Duration</th></tr>
+        </thead>
+        <tbody id="recent-flights"></tbody>
+      </table>
+    </section>
+
+    <!-- Flight Logging -->
+    <section id="logging" data-animate>
+      <h2>Flight Logging</h2>
+      <form id="log-form" class="grid">
+        <input type="text" name="from" placeholder="From ICAO" required>
+        <input type="text" name="to" placeholder="To ICAO" required>
+        <input type="text" name="duration" placeholder="Duration (hrs)" required>
+        <input type="text" name="aircraft" placeholder="Aircraft" required>
+        <button type="submit">Submit Log</button>
+      </form>
+      <div id="log-status"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="container" data-animate>
+    <small><a href="#">SkyCommand</a> • <a href="#">Privacy</a></small>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Fade-in on scroll
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+
+    // Load dashboard data
+    async function loadDashboard() {
+      try {
+        const res = await fetch("/api/flights/stats");
+        if (!res.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await res.json();
+
+        document.getElementById("flight-hours").innerText = data.totalHours + " hrs";
+        document.getElementById("total-flights").innerText = data.totalFlights;
+
+        document.getElementById("recent-flights").innerHTML = data.recentFlights.map(f => `
+          <tr>
+            <td>${f.date}</td>
+            <td>${f.from}</td>
+            <td>${f.to}</td>
+            <td>${f.duration}</td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("flight-hours").innerText = "-";
+        document.getElementById("total-flights").innerText = "-";
+        document.getElementById("recent-flights").innerHTML = "<tr><td colspan='4'>Error loading flights</td></tr>";
+      }
     }
-  };
-  if (body) options.body = JSON.stringify(body);
 
-  try {
-    const res = await fetch(`https://your-api-domain.com/${endpoint}`, options);
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
-}
+    // Handle flight logging
+    document.getElementById("log-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const flightData = Object.fromEntries(new FormData(e.target).entries());
 
-/* === Dashboard === */
-async function loadDashboard() {
-  const data = await callAPI("flights/stats"); // Example endpoint
-  if (!data) return;
+      document.getElementById("log-status").innerText = "Submitting flight log...";
 
-  document.getElementById("flight-hours").innerText = data.totalHours + " hrs";
-  document.getElementById("total-flights").innerText = data.totalFlights;
+      try {
+        const res = await fetch("/api/flights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(flightData)
+        });
 
-  document.getElementById("recent-flights").innerHTML = data.recentFlights.map(f => `
-    <tr>
-      <td>${f.date}</td>
-      <td>${f.from}</td>
-      <td>${f.to}</td>
-      <td>${f.duration}</td>
-    </tr>
-  `).join('');
-}
+        if (!res.ok) throw new Error("Failed to log flight");
+        const result = await res.json();
+        document.getElementById("log-status").innerText = result.success ? "Flight logged successfully!" : "Error logging flight";
 
-/* === Flight Logging === */
-document.getElementById("log-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-  const flightData = Object.fromEntries(formData.entries());
+        loadDashboard();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("log-status").innerText = "Error logging flight";
+      }
+    });
 
-  document.getElementById("log-status").innerText = "Submitting flight log...";
-
-  const result = await callAPI("flights", "POST", flightData);
-  if (result) {
-    document.getElementById("log-status").innerText = "Flight logged successfully!";
-    loadDashboard(); // Refresh dashboard
-  } else {
-    document.getElementById("log-status").innerText = "Error submitting flight.";
-  }
-});
-
-/* === METAR Form === */
-document.getElementById("metar-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const icao = document.getElementById("icao").value;
-  document.getElementById("metar-output").innerText = "Fetching METAR...";
-  const data = await callAPI(`metar/${icao}`);
-  document.getElementById("metar-output").innerText = data ? JSON.stringify(data, null, 2) : "Error fetching METAR";
-});
-
-/* === Charts Form === */
-document.getElementById("charts-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const icao = document.getElementById("charts-icao").value;
-  const data = await callAPI(`charts/${icao}`);
-  document.getElementById("charts-display").innerHTML = data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : "Error fetching charts";
-});
-
-/* === Fade-in Animation === */
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) entry.target.classList.add('visible');
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
-
-/* === Initial Load === */
-loadDashboard();
-</script>
+    loadDashboard();
+  </script>
+</body>
+</html>
