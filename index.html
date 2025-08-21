@@ -2,181 +2,111 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkyCommand Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyCommand</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
 <style>
-body {
-  font-family: Arial, sans-serif;
-  padding: 2rem;
-  background: url('https://cdn.discordapp.com/attachments/1362070890267017357/1362549674363588689/Captura_de_pantalla_1957.png?ex=68a84105&is=68a6ef85&hm=e4a39e4291cf287ef7a059d3140d410da8f7496abafb04ab4b4e82331db928f0&') no-repeat center center fixed;
-  background-size: cover;
-  color: #fff;
-}
-h1,h2 { text-align:center; text-shadow: 2px 2px 4px rgba(0,0,0,0.6);}
-.container { max-width:500px; margin:2rem auto; background: rgba(0,0,0,0.6); padding:1.5rem; border-radius:12px; }
-button { cursor:pointer; background-color:#001f4d; color:white; font-weight:bold; border:none; border-radius:6px; padding:0.6rem; font-size:1rem; width:100%; transition: background 0.3s, transform 0.2s; }
-button:hover { background-color:#003366; transform: translateY(-2px); }
-input { width:100%; padding:0.6rem; border-radius:6px; border:none; font-size:1rem; margin-bottom:0.5rem; }
-#log-status,#stats-summary,#charts-display { margin-top:0.5rem; text-align:center; font-weight:bold; text-shadow:1px 1px 2px rgba(0,0,0,0.6); }
-table { width:100%; border-collapse:collapse; margin-top:1rem; }
-th,td { padding:0.5rem; border:1px solid rgba(255,255,255,0.6); text-align:center; }
-th { background-color: rgba(0,0,0,0.4); }
+body { background:#f8fafc; }
+header,section{margin-bottom:2rem;}
+table{width:100%;}
+.dashboard-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;}
+.card{padding:1.5rem;background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.card:hover{transform:translateY(-4px);box-shadow:0 6px 16px rgba(0,0,0,0.1);}
+tr:hover{background-color:#eef6ff;}
 </style>
 </head>
 <body>
+<nav class="container-fluid">
+<ul><li><strong>SkyCommand</strong></li></ul>
+<ul>
+<li><a href="#dashboard">Dashboard</a></li>
+<li><a href="#metar">METAR</a></li>
+<li><a href="#charts">Charts</a></li>
+<li><a href="#logging">Log Flight</a></li>
+</ul>
+</nav>
 
-<!-- Login -->
-<div id="login-container" class="container">
-  <h1>Welcome to SkyCommand</h1>
-  <button id="discord-login">Login with Discord</button>
+<main class="container">
+
+<header>
+<h1>Welcome to SkyCommand</h1>
+<a href="https://skycommand.onrender.com/auth/discord" role="button">Login with Discord</a>
+</header>
+
+<section id="dashboard">
+<h2>Dashboard</h2>
+<div class="dashboard-cards">
+<div class="card"><h3>Total Flight Hours</h3><p id="flight-hours">Loading...</p></div>
+<div class="card"><h3>Total Flights</h3><p id="total-flights">Loading...</p></div>
 </div>
+<h3>Recent Flights</h3>
+<table>
+<thead><tr><th>Date</th><th>From</th><th>To</th><th>Duration</th></tr></thead>
+<tbody id="recent-flights"></tbody>
+</table>
+</section>
 
-<!-- Dashboard -->
-<div id="dashboard-container" style="display:none;">
-  <h1>Flight Logging Dashboard</h1>
-  <div class="container">
-    <form id="log-form">
-      <input type="text" name="from" placeholder="From ICAO" required>
-      <input type="text" name="to" placeholder="To ICAO" required>
-      <input type="text" name="duration" placeholder="Duration (hrs)" required>
-      <input type="text" name="aircraft" placeholder="Aircraft" required>
-      <input type="file" name="screenshot" id="screenshot" accept="image/*" required>
-      <button type="submit">Submit Log</button>
-    </form>
-    <div id="log-status"></div>
-  </div>
+<section id="logging">
+<h2>Flight Logging</h2>
+<form id="log-form" class="grid" enctype="multipart/form-data">
+<input type="text" name="callsign" placeholder="Callsign" required>
+<input type="text" name="aircraft" placeholder="Aircraft" required>
+<input type="text" name="from" placeholder="Departure ICAO" required>
+<input type="text" name="to" placeholder="Arrival ICAO" required>
+<input type="number" name="altitude" placeholder="Altitude (ft)" required>
+<textarea name="remarks" placeholder="Remarks"></textarea>
+<input type="file" name="screenshot" accept="image/*" required>
+<button type="submit">Submit Flight Log</button>
+</form>
+<div id="log-status"></div>
+</section>
 
-  <h2>Statistics</h2>
-  <div class="container">
-    <div id="stats-summary">Loading stats...</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>From</th><th>To</th><th>Duration</th><th>Aircraft</th>
-        </tr>
-      </thead>
-      <tbody id="recent-flights-body">
-        <tr><td colspan="5">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
+<section id="charts">
+<h2>Airport Charts</h2>
+<form id="charts-form" class="grid">
+<input type="text" id="charts-icao" placeholder="Enter ICAO" required>
+<button type="submit">Get Charts</button>
+</form>
+<div id="charts-display"></div>
+</section>
 
-  <!-- Charts -->
-  <section id="charts" data-animate>
-    <h2>Airport Charts</h2>
-    <p>Enter ICAO code to view available charts.</p>
-    <form id="charts-form" class="grid">
-      <input type="text" id="charts-icao" placeholder="Enter ICAO (e.g. EGLL)" required>
-      <button type="submit">Get Charts</button>
-    </form>
-    <div id="charts-display"></div>
-  </section>
-</div>
+</main>
 
 <script>
-const allowedICAO = ["LCLK","LCPH","LCRA","MDPC","MDAB","MDST","EGKK","EGHI","GLCP","LEHM","EFKT"];
-const allowedAircraft = ["B737-800"];
-const BACKEND_URL = "https://skycommand.onrender.com"; // <-- DEINE RENDER URL
-
-// Discord Login
-document.getElementById("discord-login").addEventListener("click", ()=>{
-  window.location.href = `$https://skycommand.onrender.com/auth/discord`;
-});
-
-// Prüfen ob Nutzer eingeloggt ist
-async function checkLogin(){
-  try{
-    const res = await fetch(`$https://skycommand.onrender.com/auth/check`, {credentials:"include"});
-    const data = await res.json();
-    if(data.loggedIn){
-      document.getElementById("login-container").style.display="none";
-      document.getElementById("dashboard-container").style.display="block";
-      loadStats();
-    }
-  }catch(err){ console.log("Not logged in yet."); }
+// Load stats from backend
+async function loadDashboard() {
+  const res = await fetch("https://skycommand.onrender.com/api/stats");
+  const data = await res.json();
+  document.getElementById("flight-hours").innerText = data.totalHours + " hrs";
+  document.getElementById("total-flights").innerText = data.totalFlights;
+  document.getElementById("recent-flights").innerHTML = data.recentFlights.map(f => `
+    <tr><td>${f.date}</td><td>${f.from}</td><td>${f.to}</td><td>${f.duration}</td></tr>
+  `).join("");
 }
+loadDashboard();
 
 // Flight Logging
-document.getElementById("log-form").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const from = e.target.from.value.trim().toUpperCase();
-  const to = e.target.to.value.trim().toUpperCase();
-  const duration = e.target.duration.value.trim();
-  const aircraft = e.target.aircraft.value.trim();
-  const screenshot = e.target.screenshot.files[0];
-
-  if(!allowedICAO.includes(from)){document.getElementById("log-status").innerText="Ungültiger From ICAO Code!";return;}
-  if(!allowedICAO.includes(to)){document.getElementById("log-status").innerText="Ungültiger To ICAO Code!";return;}
-  if(isNaN(duration)||duration<=0){document.getElementById("log-status").innerText="Ungültige Dauer!";return;}
-  if(!allowedAircraft.includes(aircraft)){document.getElementById("log-status").innerText="Ungültiges Flugzeug!";return;}
-  if(!screenshot){document.getElementById("log-status").innerText="Bitte Screenshot hochladen!";return;}
-
-  document.getElementById("log-status").innerText="Submitting flight log...";
-
-  try{
-    const formData = new FormData();
-    formData.append("from", from);
-    formData.append("to", to);
-    formData.append("duration", duration);
-    formData.append("aircraft", aircraft);
-    formData.append("screenshot", screenshot);
-
-    const res = await fetch(`$https://skycommand.onrender.com/api/flights`, {
-      method:"POST", credentials:"include", body:formData
-    });
-    const data = await res.json();
-    document.getElementById("log-status").innerText = data.success?"Flight logged successfully!":"Fehler beim Speichern!";
-    if(data.success) e.target.reset();
-    loadStats();
-  }catch(err){
-    document.getElementById("log-status").innerText="Fehler: "+err.message;
-  }
+document.getElementById("log-form").addEventListener("submit", async (e) => {
+e.preventDefault();
+const form = e.target;
+const formData = new FormData(form);
+const res = await fetch("https://skycommand.onrender.com/api/log", { method: "POST", body: formData });
+const result = await res.json();
+document.getElementById("log-status").innerText = result.message || "Flight logged!";
+form.reset();
 });
-
-// Flight Stats
-async function loadStats(){
-  try{
-    const res = await fetch(`$https://skycommand.onrender.com/api/stats`, {credentials:"include"});
-    const data = await res.json();
-    if(data.success){
-      document.getElementById("stats-summary").innerHTML=`Total Flights: ${data.totalFlights}<br>Total Hours: ${data.totalHours} hrs`;
-      const tbody = document.getElementById("recent-flights-body");
-      tbody.innerHTML="";
-      data.recentFlights.forEach(f=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML=`<td>${f.date}</td><td>${f.from}</td><td>${f.to}</td><td>${f.duration}</td><td>${f.aircraft}</td>`;
-        tbody.appendChild(tr);
-      });
-    }else{
-      document.getElementById("stats-summary").innerText="Stats konnten nicht geladen werden.";
-    }
-  }catch(err){
-    document.getElementById("stats-summary").innerText="Fehler: "+err.message;
-  }
-}
 
 // Charts
-document.getElementById("charts-form").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const icao = document.getElementById("charts-icao").value.trim().toUpperCase();
-  const chartsDisplay = document.getElementById("charts-display");
-  chartsDisplay.innerHTML = "Loading charts...";
-
-  try{
-    const res = await fetch(`https://api.pfconnect.online/api/v1/$pfc_6996f46fd6119d2c6086c85bb6fab77c/charts/uploads`);
-    const data = await res.json();
-    const filtered = data.filter(c=>c.icao===icao);
-    if(filtered.length===0){
-      chartsDisplay.innerHTML="No charts found for this ICAO.";
-    }else{
-      chartsDisplay.innerHTML = filtered.map(c=>`<div><a href="${c.url}" target="_blank">${c.name}</a></div>`).join('');
-    }
-  }catch(err){
-    chartsDisplay.innerHTML="Error fetching charts: "+err.message;
-  }
+document.getElementById("charts-form").addEventListener("submit", async (e) => {
+e.preventDefault();
+const icao = document.getElementById("charts-icao").value;
+const res = await fetch(`https://skycommand.onrender.com/api/charts?icao=${icao}`);
+const charts = await res.json();
+document.getElementById("charts-display").innerHTML = charts.map(c => `
+  <a href="${c.url}" target="_blank">${c.name}</a><br>
+`).join("");
 });
-
-checkLogin();
 </script>
+
 </body>
 </html>
