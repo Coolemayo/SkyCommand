@@ -1,43 +1,81 @@
-import express from "express";
-import fetch from "node-fetch";
+const express = require('express');
+const cors = require('cors');
+const session = require('express-session');
+const multer = require('multer');
+const axios = require('axios');
+const path = require('path');
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY;
 
-// Beispiel: Proxy für Flight Logging
-app.post("/api/log", async (req, res) => {
+// Middleware
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Static frontend
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Multer für Screenshot Upload
+const upload = multer({ dest: 'uploads/' });
+
+// Flight Logging Route
+app.post('/api/log', upload.single('screenshot'), async (req, res) => {
   try {
-    const response = await fetch("https://api.pfconnect.online/api/v1/flights", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer $pfc_6996f46fd6119d2c6086c85bb6fab77c`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(req.body)
+    const { callsign, aircraft, from, to, altitude, remarks } = req.body;
+    // Datei liegt in req.file
+    // Hier kann man direkt an PFConnect senden oder lokal speichern
+    const response = await axios.post('https://api.pfconnect.online/api/v1/flights', {
+      callsign, aircraft, from, to, altitude, remarks
+    }, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
     });
 
-    const data = await response.json();
-    res.json(data);
+    res.json({ success: true, message: "Flight logged!" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to log flight" });
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to log flight" });
   }
 });
 
-// Beispiel: Hole Statistiken
-app.get("/api/stats", async (req, res) => {
+// Stats Route
+app.get('/api/stats', async (req, res) => {
   try {
-    const response = await fetch("https://api.pfconnect.online/api/v1/stats", {
-      headers: {
-        "Authorization": `Bearer $pfc_6996f46fd6119d2c6086c85bb6fab77c`
-      }
+    const response = await axios.get('https://api.pfconnect.online/api/v1/stats', {
+      headers: { Authorization: `Bearer ${API_KEY}` }
     });
-
-    const data = await response.json();
-    res.json(data);
+    res.json(response.data);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+// Charts Route
+app.get('/api/charts', async (req, res) => {
+  const icao = req.query.icao;
+  if (!icao) return res.status(400).json({ error: "ICAO required" });
+
+  try {
+    const response = await axios.get(`https://api.pfconnect.online/api/v1/charts/uploads?icao=${icao}`, {
+      headers: { Authorization: `Bearer ${API_KEY}` }
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch charts" });
+  }
+});
+
+// Discord Login placeholder
+app.get('/auth/discord', (req, res) => {
+  res.send("Discord login redirect placeholder");
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
