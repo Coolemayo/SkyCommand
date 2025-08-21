@@ -76,17 +76,17 @@ th { background-color: rgba(0,0,0,0.4); }
 <script>
 const allowedICAO = ["LCLK","LCPH","LCRA","MDPC","MDAB","MDST","EGKK","EGHI","GLCP","LEHM","EFKT"];
 const allowedAircraft = ["B737-800"];
-const BACKEND_URL = "https://skycommand-backend.onrender.com"; // <-- DEINE RENDER URL
+const BACKEND_URL = "https://skycommand.onrender.com"; // <-- DEINE RENDER URL
 
 // Discord Login
 document.getElementById("discord-login").addEventListener("click", ()=>{
-  window.location.href = `${BACKEND_URL}/auth/discord`;
+  window.location.href = `$https://skycommand.onrender.com/auth/discord`;
 });
 
 // Prüfen ob Nutzer eingeloggt ist
 async function checkLogin(){
   try{
-    const res = await fetch(`${BACKEND_URL}/auth/check`, {credentials:"include"});
+    const res = await fetch(`$https://skycommand.onrender.com/auth/check`, {credentials:"include"});
     const data = await res.json();
     if(data.loggedIn){
       document.getElementById("login-container").style.display="none";
@@ -121,7 +121,7 @@ document.getElementById("log-form").addEventListener("submit", async (e)=>{
     formData.append("aircraft", aircraft);
     formData.append("screenshot", screenshot);
 
-    const res = await fetch(`${BACKEND_URL}/api/flights`, {
+    const res = await fetch(`$https://skycommand.onrender.com/api/flights`, {
       method:"POST", credentials:"include", body:formData
     });
     const data = await res.json();
@@ -136,7 +136,7 @@ document.getElementById("log-form").addEventListener("submit", async (e)=>{
 // Flight Stats
 async function loadStats(){
   try{
-    const res = await fetch(`${BACKEND_URL}/api/stats`, {credentials:"include"});
+    const res = await fetch(`$https://skycommand.onrender.com/api/stats`, {credentials:"include"});
     const data = await res.json();
     if(data.success){
       document.getElementById("stats-summary").innerHTML=`Total Flights: ${data.totalFlights}<br>Total Hours: ${data.totalHours} hrs`;
