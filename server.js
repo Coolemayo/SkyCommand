@@ -6,11 +6,13 @@ import dotenv from "dotenv";
 import axios from "axios";
 import multer from "multer";
 import path from "path";
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -19,7 +21,6 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
-
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -33,25 +34,23 @@ passport.use(new DiscordStrategy({
   scope: ["identify"]
 }, (accessToken, refreshToken, profile, done) => done(null, profile)));
 
-// Auth Routes
+// Auth routes
 app.get("/auth/discord", passport.authenticate("discord"));
 app.get("/auth/discord/callback", passport.authenticate("discord", { failureRedirect: "/login.html" }), (req, res) => {
   res.redirect("/dashboard");
 });
-app.get("/logout", (req, res) => {
-  req.logout(() => res.redirect("/login.html"));
-});
+app.get("/logout", (req, res) => req.logout(() => res.redirect("/login.html")));
 
-// Auth Middleware
+// Auth middleware
 function checkAuth(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.redirect("/login.html");
 }
 
-// Multer for screenshot
+// Multer for screenshots
 const upload = multer({ dest: "uploads/" });
 
-// API Endpoints
+// API endpoints
 app.post("/api/log", checkAuth, upload.single("screenshot"), async (req, res) => {
   try {
     const { callsign, aircraft, departure, arrival, altitude, remarks } = req.body;
