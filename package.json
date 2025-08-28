@@ -1,20 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - SkyCommand</title>
-<style>
-body { display:flex; justify-content:center; align-items:center; height:100vh; background:#0f172a; color:white; font-family:sans-serif; }
-.login-box { text-align:center; background:#111827; padding:40px; border-radius:15px; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
-a { display:inline-block; margin-top:20px; padding:12px 24px; background:#001f54; color:white; text-decoration:none; border-radius:8px; font-weight:bold; }
-</style>
-</head>
-<body>
-<div class="login-box">
-<h1>SkyCommand</h1>
-<p>Login mit Discord</p>
-<a href="/auth/discord">Login</a>
-</div>
-</body>
-</html>
+{
+  "name": "skycommand",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "passport": "^0.6.0",
+    "passport-discord": "^0.1.4",
+    "multer": "^1.4.5-lts.1"
+  }
+}
