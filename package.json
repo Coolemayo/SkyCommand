@@ -1,7 +1,6 @@
 {
   "name": "skycommand",
   "version": "1.0.0",
-  "description": "SkyCommand Backend & Frontend",
   "main": "server.js",
   "type": "module",
   "scripts": {
