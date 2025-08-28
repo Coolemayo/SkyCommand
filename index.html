@@ -6,35 +6,20 @@
   <title>SkyCommand Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
   <style>
-    body { background: url('https://source.unsplash.com/1920x1080/?airplane,sky') no-repeat center center/cover; }
-    nav, main, footer { backdrop-filter: blur(6px); background: rgba(255,255,255,0.8); border-radius: 8px; }
-    button { background:#001F54;color:white; }
+    body { background: url('https://source.unsplash.com/1920x1080/?airplane,sky') no-repeat center/cover; color:#fff; }
+    nav, main, footer { background: rgba(0,0,0,0.7); padding:15px; border-radius:8px; margin:10px; }
+    button { background:#001f54; color:white; }
+    table { background: rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
-  <nav class="container-fluid">
-    <ul><li><strong>SkyCommand</strong></li></ul>
-    <ul><li><a href="/logout">Logout</a></li></ul>
+  <nav>
+    <h1>SkyCommand Dashboard</h1>
+    <a href="/logout">Logout</a>
   </nav>
-
-  <main class="container">
-    <h1>Willkommen bei SkyCommand!</h1>
+  <main>
     <section>
-      <h2>Statistik</h2>
-      <p><strong>Flugstunden:</strong> <span id="hours">Laden...</span></p>
-      <p><strong>Flüge:</strong> <span id="flights">Laden...</span></p>
-    </section>
-
-    <section>
-      <h2>Letzte Flüge</h2>
-      <table id="flightsTable">
-        <thead><tr><th>Callsign</th><th>From</th><th>To</th><th>Dauer</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-    <section>
-      <h2>Flug eintragen</h2>
+      <h2>Flight Logging</h2>
       <form id="logForm" enctype="multipart/form-data">
         <input name="callsign" placeholder="Callsign" required>
         <input name="aircraft" placeholder="Aircraft" required>
@@ -47,28 +32,40 @@
       </form>
       <p id="status"></p>
     </section>
+    <section>
+      <h2>Stats</h2>
+      <p>Flüge: <span id="flightsCount">0</span></p>
+      <p>Flugstunden: <span id="hoursCount">0</span></p>
+    </section>
+    <section>
+      <h2>Recent Flights</h2>
+      <table>
+        <thead><tr><th>Callsign</th><th>From</th><th>To</th><th>Altitude</th></tr></thead>
+        <tbody id="flightsList"></tbody>
+      </table>
+    </section>
   </main>
 
   <script>
     async function loadStats() {
-      const stats = await fetch("/api/stats").then(r=>r.json());
-      document.getElementById("hours").textContent = stats.hours || "0";
-      document.getElementById("flights").textContent = stats.flights || "0";
+      const stats = await fetch('/api/stats').then(r=>r.json());
+      document.getElementById('flightsCount').textContent = stats.flights || 0;
+      document.getElementById('hoursCount').textContent = stats.hours || 0;
     }
 
     async function loadFlights() {
-      const flights = await fetch("/api/flights").then(r=>r.json());
-      const tbody = document.querySelector("#flightsTable tbody");
-      tbody.innerHTML = flights.map(f=>`<tr><td>${f.callsign}</td><td>${f.departure}</td><td>${f.arrival}</td><td>${f.duration}</td></tr>`).join("");
+      const flights = await fetch('/api/flights').then(r=>r.json());
+      const tbody = document.getElementById('flightsList');
+      tbody.innerHTML = flights.map(f => `<tr><td>${f.callsign}</td><td>${f.departure}</td><td>${f.arrival}</td><td>${f.altitude}</td></tr>`).join('');
     }
 
-    document.getElementById("logForm").addEventListener("submit", async e=>{
+    document.getElementById('logForm').addEventListener('submit', async e => {
       e.preventDefault();
       const formData = new FormData(e.target);
-      document.getElementById("status").textContent = "Sende...";
-      const res = await fetch("/api/log", {method:"POST", body:formData});
+      const obj = Object.fromEntries(formData.entries());
+      const res = await fetch('/api/log', { method:'POST', body:formData });
       const data = await res.json();
-      document.getElementById("status").textContent = data.message || "Fehler!";
+      document.getElementById('status').textContent = data.message || 'Fehler!';
       loadFlights();
       loadStats();
     });
