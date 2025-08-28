@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyCommand Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    body { background: url('https://source.unsplash.com/1920x1080/?airplane,sky') no-repeat center center/cover; }
+    nav, main, footer { backdrop-filter: blur(6px); background: rgba(255,255,255,0.8); border-radius: 8px; }
+    button { background:#001F54;color:white; }
+  </style>
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul><li><strong>SkyCommand</strong></li></ul>
+    <ul><li><a href="/logout">Logout</a></li></ul>
+  </nav>
+
+  <main class="container">
+    <h1>Willkommen bei SkyCommand!</h1>
+    <section>
+      <h2>Statistik</h2>
+      <p><strong>Flugstunden:</strong> <span id="hours">Laden...</span></p>
+      <p><strong>Flüge:</strong> <span id="flights">Laden...</span></p>
+    </section>
+
+    <section>
+      <h2>Letzte Flüge</h2>
+      <table id="flightsTable">
+        <thead><tr><th>Callsign</th><th>From</th><th>To</th><th>Dauer</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Flug eintragen</h2>
+      <form id="logForm" enctype="multipart/form-data">
+        <input name="callsign" placeholder="Callsign" required>
+        <input name="aircraft" placeholder="Aircraft" required>
+        <input name="departure" placeholder="Departure ICAO" required>
+        <input name="arrival" placeholder="Arrival ICAO" required>
+        <input name="altitude" placeholder="Altitude" required>
+        <textarea name="remarks" placeholder="Remarks"></textarea>
+        <input type="file" name="screenshot" accept="image/*" required>
+        <button type="submit">Submit</button>
+      </form>
+      <p id="status"></p>
+    </section>
+  </main>
+
+  <script>
+    async function loadStats() {
+      const stats = await fetch("/api/stats").then(r=>r.json());
+      document.getElementById("hours").textContent = stats.hours || "0";
+      document.getElementById("flights").textContent = stats.flights || "0";
+    }
+
+    async function loadFlights() {
+      const flights = await fetch("/api/flights").then(r=>r.json());
+      const tbody = document.querySelector("#flightsTable tbody");
+      tbody.innerHTML = flights.map(f=>`<tr><td>${f.callsign}</td><td>${f.departure}</td><td>${f.arrival}</td><td>${f.duration}</td></tr>`).join("");
+    }
+
+    document.getElementById("logForm").addEventListener("submit", async e=>{
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      document.getElementById("status").textContent = "Sende...";
+      const res = await fetch("/api/log", {method:"POST", body:formData});
+      const data = await res.json();
+      document.getElementById("status").textContent = data.message || "Fehler!";
+      loadFlights();
+      loadStats();
+    });
+
+    loadStats();
+    loadFlights();
+  </script>
+</body>
+</html>
