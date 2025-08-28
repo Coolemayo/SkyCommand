@@ -1,77 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkyCommand Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-  <style>
-    body { background: url('https://source.unsplash.com/1920x1080/?airplane,sky') no-repeat center/cover; color:#fff; }
-    nav, main, footer { background: rgba(0,0,0,0.7); padding:15px; border-radius:8px; margin:10px; }
-    button { background:#001f54; color:white; }
-    table { background: rgba(255,255,255,0.1); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyCommand Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+<style>
+body { background: url('https://source.unsplash.com/1920x1080/?airplane,sky') no-repeat center/cover; color:#fff; }
+nav, main, footer { background: rgba(0,0,0,0.7); padding:15px; border-radius:8px; margin:10px; }
+button { background:#001f54; color:white; }
+table { background: rgba(255,255,255,0.1); }
+</style>
 </head>
 <body>
-  <nav>
-    <h1>SkyCommand Dashboard</h1>
-    <a href="/logout">Logout</a>
-  </nav>
-  <main>
-    <section>
-      <h2>Flight Logging</h2>
-      <form id="logForm" enctype="multipart/form-data">
-        <input name="callsign" placeholder="Callsign" required>
-        <input name="aircraft" placeholder="Aircraft" required>
-        <input name="departure" placeholder="Departure ICAO" required>
-        <input name="arrival" placeholder="Arrival ICAO" required>
-        <input name="altitude" placeholder="Altitude" required>
-        <textarea name="remarks" placeholder="Remarks"></textarea>
-        <input type="file" name="screenshot" accept="image/*" required>
-        <button type="submit">Submit</button>
-      </form>
-      <p id="status"></p>
-    </section>
-    <section>
-      <h2>Stats</h2>
-      <p>Flüge: <span id="flightsCount">0</span></p>
-      <p>Flugstunden: <span id="hoursCount">0</span></p>
-    </section>
-    <section>
-      <h2>Recent Flights</h2>
-      <table>
-        <thead><tr><th>Callsign</th><th>From</th><th>To</th><th>Altitude</th></tr></thead>
-        <tbody id="flightsList"></tbody>
-      </table>
-    </section>
-  </main>
-
-  <script>
-    async function loadStats() {
-      const stats = await fetch('/api/stats').then(r=>r.json());
-      document.getElementById('flightsCount').textContent = stats.flights || 0;
-      document.getElementById('hoursCount').textContent = stats.hours || 0;
-    }
-
-    async function loadFlights() {
-      const flights = await fetch('/api/flights').then(r=>r.json());
-      const tbody = document.getElementById('flightsList');
-      tbody.innerHTML = flights.map(f => `<tr><td>${f.callsign}</td><td>${f.departure}</td><td>${f.arrival}</td><td>${f.altitude}</td></tr>`).join('');
-    }
-
-    document.getElementById('logForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const obj = Object.fromEntries(formData.entries());
-      const res = await fetch('/api/log', { method:'POST', body:formData });
-      const data = await res.json();
-      document.getElementById('status').textContent = data.message || 'Fehler!';
-      loadFlights();
-      loadStats();
-    });
-
-    loadStats();
-    loadFlights();
-  </script>
+<nav>
+<h1>SkyCommand Dashboard</h1>
+<a href="/logout">Logout</a>
+</nav>
+<main>
+<section>
+<h2>Flight Logging</h2>
+<form id="logForm" enctype="multipart/form-data">
+<input name="callsign" placeholder="Callsign" required>
+<input name="aircraft" placeholder="Aircraft" required>
+<input name="departure" placeholder="Departure ICAO" required>
+<input name="arrival" placeholder="Arrival ICAO" required>
+<input name="altitude" placeholder="Altitude" required>
+<textarea name="remarks" placeholder="Remarks"></textarea>
+<input type="file" name="screenshot" accept="image/*" required>
+<button type="submit">Submit</button>
+</form>
+<p id="status"></p>
+</section>
+<section>
+<h2>Stats</h2>
+<p>Flüge: <span id="flightsCount">0</span></p>
+<p>Flugstunden: <span id="hoursCount">0</span></p>
+</section>
+<section>
+<h2>Recent Flights</h2>
+<table>
+<thead><tr><th>Callsign</th><th>From</th><th>To</th><th>Altitude</th></tr></thead>
+<tbody id="flightsList"></tbody>
+</table>
+</section>
+</main>
+<script>
+async function loadStats(){
+const stats=await fetch('/api/stats').then(r=>r.json());
+document.getElementById('flightsCount').textContent=stats.flights||0;
+document.getElementById('hoursCount').textContent=stats.hours||0;
+}
+async function loadFlights(){
+const flights=await fetch('/api/flights').then(r=>r.json());
+const tbody=document.getElementById('flightsList');
+tbody.innerHTML=flights.map(f=>`<tr><td>${f.callsign}</td><td>${f.departure}</td><td>${f.arrival}</td><td>${f.altitude}</td></tr>`).join('');
+}
+document.getElementById('logForm').addEventListener('submit',async e=>{
+e.preventDefault();
+const formData=new FormData(e.target);
+const res=await fetch('/api/log',{method:'POST',body:formData});
+const data=await res.json();
+document.getElementById('status').textContent=data.message||'Fehler!';
+loadFlights();
+loadStats();
+});
+loadStats();
+loadFlights();
+</script>
 </body>
 </html>
