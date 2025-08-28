@@ -95,5 +95,5 @@ app.get("/api/flights", checkAuth, async (req, res) => {
 // Pages
 app.get("/", (req, res) => req.isAuthenticated() ? res.redirect("/dashboard") : res.sendFile(path.join(process.cwd(), "public/login.html")));
 app.get("/dashboard", checkAuth, (req, res) => res.sendFile(path.join(process.cwd(), "public/index.html")));
-
+ 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
